@@ -13,30 +13,55 @@ func wlGetFocusWindowClass() error {
 	if err != nil {
 		return fmt.Errorf("Connect to Wayland server failed %s", err)
 	}
+	appIdChan := make(chan string, 10)
+	err = registerGlobals(display, appIdChan)
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case wlAppId = <-appIdChan:
+		case display.Context().Dispatch() <- struct{}{}:
+		}
+	}
+	display.Context().Close()
+	return nil
+}
+
+func registerGlobals(display *wl.Display, appIdChan chan string) error {
 	registry, err := display.GetRegistry()
 	if err != nil {
 		return fmt.Errorf("Display.GetRegistry failed : %s", err)
 	}
-	_, err = display.Sync()
+
+	callback, err := display.Sync()
 	if err != nil {
 		return fmt.Errorf("Display.Sync failed %s", err)
 	}
-	appIdChan := make(chan string, 10)
+
 	rgeChan := make(chan wl.RegistryGlobalEvent)
 	rgeHandler := registrar{rgeChan}
 	registry.AddGlobalHandler(rgeHandler)
+
+	cdeChan := make(chan wl.CallbackDoneEvent)
+	cdeHandler := doner{cdeChan}
+
+	callback.AddDoneHandler(cdeHandler)
+loop:
 	for {
 		select {
 		case ev := <-rgeChan:
 			if err := registerInterface(registry, ev, display.Context(), appIdChan); err != nil {
 				return err
 			}
-		case wlAppId = <-appIdChan:
 		case display.Context().Dispatch() <- struct{}{}:
+		case <-cdeChan:
+			break loop
 		}
 	}
+
 	registry.RemoveGlobalHandler(rgeHandler)
-	display.Context().Close()
+	callback.RemoveDoneHandler(cdeHandler)
 	return nil
 }
 
@@ -51,6 +76,14 @@ func registerInterface(registry *wl.Registry, ev wl.RegistryGlobalEvent, ctx *wl
 		}
 	}
 	return nil
+}
+
+type doner struct {
+	ch chan wl.CallbackDoneEvent
+}
+
+func (d doner) HandleCallbackDone(ev wl.CallbackDoneEvent) {
+	d.ch <- ev
 }
 
 type registrar struct {

@@ -67,7 +67,7 @@ func (p *ZwlrForeignToplevelManagerV1) RemoveFinishedHandler(h ZwlrForeignToplev
 	}
 }
 
-func (p *ZwlrForeignToplevelManagerV1) Dispatch(event *wl.Event) {
+func (p *ZwlrForeignToplevelManagerV1) Dispatch(ctx wl.Context, event *wl.Event) {
 	switch event.Opcode {
 	case 0:
 		if len(p.toplevelHandlers) > 0 {
