@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	wl "github.com/dkolbly/wl"
+	wl "github.com/rajveermalviya/wl"
 )
 
 var wlAppId string
@@ -98,15 +98,15 @@ type toplevelHandlers struct {
 }
 
 func (t toplevelHandlers) HandleZwlrForeignToplevelManagerV1Toplevel(ev ZwlrForeignToplevelManagerV1ToplevelEvent) {
-	ev.Toplevel.AddAppIdHandler(appIdHandler{t.ch})
+	ev.Toplevel.AddAppIDHandler(appIdHandler{t.ch})
 }
 
 type appIdHandler struct {
 	ch chan string
 }
 
-func (a appIdHandler) HandleZwlrForeignToplevelHandleV1AppId(ev ZwlrForeignToplevelHandleV1AppIdEvent) {
-	print(ev.AppId)
-	a.ch <- ev.AppId
+func (a appIdHandler) HandleZwlrForeignToplevelHandleV1AppID(ev ZwlrForeignToplevelHandleV1AppIDEvent) {
+	print(ev.AppID)
+	a.ch <- ev.AppID
 }
 

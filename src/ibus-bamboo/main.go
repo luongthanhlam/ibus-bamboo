@@ -55,7 +55,10 @@ func main() {
 		os.Chdir(DataDir)
 	}
 	if isWayland && !isGnome {
-		go wlGetFocusWindowClass()
+		go func() {
+			e := wlGetFocusWindowClass()
+			log.Println(e)
+		}()
 	}
 	if *version {
 		fmt.Println(Version)
